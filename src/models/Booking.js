@@ -28,7 +28,9 @@ const bookingSchema = new mongoose.Schema({
         enum: ['pending', 'confirmed', 'cancelled', 'completed'],
         default: 'pending'
     },
-    note: { type: String, default: '' }
+    note:       { type: String, default: '' },
+    promoCode:  { type: String, default: null },
+    finalPrice: { type: Number, default: null } // null = không dùng promo; giá thực tế = finalPrice ?? totalPrice
 }, { timestamps: true });
 
 module.exports = mongoose.model('Booking', bookingSchema);

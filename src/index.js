@@ -17,6 +17,13 @@ const io = new Server(server, {
 // Lắng nghe kết nối realtime
 io.on('connection', (socket) => {
     console.log('⚡ Client kết nối Socket thành công:', socket.id);
+
+    // Client gửi userId để join room cá nhân
+    socket.on('joinRoom', (roomId) => {
+        socket.join(roomId);
+        console.log(`📌 Socket ${socket.id} joined room: ${roomId}`);
+    });
+
     socket.on('disconnect', () => {
         console.log('❌ Client đã thoát');
     });
@@ -53,6 +60,12 @@ app.use('/api/fields', fieldRoutes);
 
 const bookingRoutes = require('./routes/bookingRoutes');
 app.use('/api/bookings', bookingRoutes);
+
+const paymentRoutes = require('./routes/paymentRoutes');
+app.use('/api/payments', paymentRoutes);
+
+const promotionRoutes = require('./routes/promotionRoutes');
+app.use('/api/promotions', promotionRoutes);
 
 // Kết nối MongoDB
 mongoose.connect(process.env.MONGODB_URI)
