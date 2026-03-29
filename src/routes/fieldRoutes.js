@@ -7,8 +7,10 @@ const upload = require('../middlewares/uploadMiddleware');
 // API Tạo sân mới (Chỉ Admin/Owner được tạo, cho phép upload ảnh)
 router.post('/', verifyToken, authorizeRoles('Admin', 'Owner'), upload.array('images', 5), async (req, res) => {
     try {
-        // Lấy đường dẫn các file đã được multer lưu lại
-        const imageUrls = req.files ? req.files.map(file => `/uploads/${file.filename}`) : [];
+        // Ưu tiên file upload trực tiếp, nếu không thì dùng URLs đã upload sẵn từ body
+        const imageUrls = (req.files && req.files.length > 0)
+            ? req.files.map(file => `/uploads/${file.filename}`)
+            : [].concat(req.body.images || []);
         
         // Lấy ID của người đang đăng nhập gắn làm Chủ sân (owner)
         const fieldData = {
@@ -32,11 +34,39 @@ router.post('/', verifyToken, authorizeRoles('Admin', 'Owner'), upload.array('im
     }
 });
 
+// API Upload ảnh riêng (dùng cho Upload component ở Frontend)
+router.post('/upload', upload.single('file'), (req, res) => {
+    if (!req.file) return res.status(400).json({ message: 'Không có file nào được gửi lên' });
+    const imageUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+    res.status(200).json({ imageUrl });
+});
+
 // API Lấy danh sách sân
 router.get('/', async (req, res) => {
     try {
         const fields = await fieldService.getAllFields();
         res.status(200).json({ message: 'Lấy danh sách sân thành công', data: fields });
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+});
+
+// API Lấy chi tiết 1 sân theo ID
+router.get('/:id', async (req, res) => {
+    try {
+        const field = await fieldService.getFieldById(req.params.id);
+        res.status(200).json({ message: 'Lấy chi tiết sân thành công', data: field });
+    } catch (error) {
+        res.status(404).json({ message: error.message });
+    }
+});
+
+// API Chỉnh sửa sân
+router.put('/:id', verifyToken, authorizeRoles('Admin', 'Owner'), async (req, res) => {
+    try {
+        const imageUrls = [].concat(req.body.images || []);
+        const field = await fieldService.updateField(req.params.id, req.body, imageUrls);
+        res.status(200).json({ message: 'Cập nhật sân thành công', data: field });
     } catch (error) {
         res.status(400).json({ message: error.message });
     }

@@ -16,34 +16,27 @@ const getAllFields = async () => {
         .populate('owner', 'fullName email');
 };
 
-// THÊM HÀM NÀY ĐỂ XỬ LÝ TRANSACTION:
 const deleteField = async (fieldId) => {
-    // 1. Khởi tạo một phiên giao dịch (Session)
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
-    try {
-        // 2. Xóa tất cả các Review thuộc về sân này (nhớ truyền session vào)
-        await Review.deleteMany({ field: fieldId }).session(session);
-
-        // 3. Xóa chính cái sân đó
-        const deletedField = await SportField.findByIdAndDelete(fieldId).session(session);
-
-        if (!deletedField) {
-            throw new Error('Không tìm thấy sân để xóa');
-        }
-
-        // 4. Nếu cả 2 bước trên thành công -> Chốt giao dịch (Commit)
-        await session.commitTransaction();
-        session.endSession();
-        return deletedField;
-
-    } catch (error) {
-        // 5. Nếu có bất kỳ lỗi gì xảy ra -> Hủy bỏ toàn bộ (Rollback)
-        await session.abortTransaction();
-        session.endSession();
-        throw error;
-    }
+    const deletedField = await SportField.findByIdAndDelete(fieldId);
+    if (!deletedField) throw new Error('Không tìm thấy sân để xóa');
+    await Review.deleteMany({ field: fieldId });
+    return deletedField;
 };
 
-module.exports = { createField, getAllFields, deleteField };
+const updateField = async (fieldId, data, imageUrls) => {
+    const updateData = { ...data };
+    if (imageUrls && imageUrls.length > 0) updateData.images = imageUrls;
+    const updated = await SportField.findByIdAndUpdate(fieldId, updateData, { new: true });
+    if (!updated) throw new Error('Không tìm thấy sân để cập nhật');
+    return updated;
+};
+
+const getFieldById = async (fieldId) => {
+    const field = await SportField.findById(fieldId)
+        .populate('category', 'name')
+        .populate('owner', 'fullName email');
+    if (!field) throw new Error('Không tìm thấy sân');
+    return field;
+};
+
+module.exports = { createField, updateField, getAllFields, getFieldById, deleteField };

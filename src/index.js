@@ -51,6 +51,9 @@ app.use('/uploads', express.static('uploads'));
 const fieldRoutes = require('./routes/fieldRoutes');
 app.use('/api/fields', fieldRoutes);
 
+const bookingRoutes = require('./routes/bookingRoutes');
+app.use('/api/bookings', bookingRoutes);
+
 // Kết nối MongoDB
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => {
