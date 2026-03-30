@@ -4,53 +4,61 @@ const fieldService = require('../services/fieldService');
 const { verifyToken, authorizeRoles } = require('../middlewares/authMiddleware');
 const upload = require('../middlewares/uploadMiddleware');
 
-// API Tạo sân mới (Chỉ Admin/Owner được tạo, cho phép upload ảnh)
-router.post('/', verifyToken, authorizeRoles('Admin', 'Owner'), upload.array('images', 5), async (req, res) => {
+// 1. Lấy danh sách sân
+router.get('/', async (req, res) => {
     try {
-        // Lấy đường dẫn các file đã được multer lưu lại
-        const imageUrls = req.files ? req.files.map(file => `/uploads/${file.filename}`) : [];
-        
-        // Lấy ID của người đang đăng nhập gắn làm Chủ sân (owner)
-        const fieldData = {
-            ...req.body,
-            owner: req.user.id 
-        };
+        const fields = await fieldService.getAllFields();
+        res.status(200).json({ data: fields });
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+});
 
-        const field = await fieldService.createField(fieldData, imageUrls);
+// 2. Lấy chi tiết 1 sân (QUAN TRỌNG: Để trang chi tiết hoạt động)
+router.get('/:id', async (req, res) => {
+    try {
+        const field = await fieldService.getFieldById(req.params.id);
+        res.status(200).json({ data: field });
+    } catch (error) {
+        res.status(404).json({ message: "Không tìm thấy thông tin sân!" });
+    }
+});
 
-        // Phát thông báo real-time cho tất cả client đang kết nối (sử dụng Socket.IO)
-        console.log('📢 Chuẩn bị bắn thông báo Socket...');
-        req.io.emit('new_field', {
-            message: `Sân mới "${field.name}" vừa được thêm vào hệ thống!`,
-            fieldId: field._id
-        });
-        console.log('✅ Đã bắn thông báo xong!');
-
+// 3. Tạo sân mới
+router.post('/', verifyToken, authorizeRoles('Admin', 'Owner'), async (req, res) => {
+    try {
+        const fieldData = { ...req.body, owner: req.user.id };
+        const field = await fieldService.createField(fieldData, req.body.images);
         res.status(201).json({ message: 'Tạo sân thành công', data: field });
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
 });
 
-// API Lấy danh sách sân
-router.get('/', async (req, res) => {
+// 4. Cập nhật sân (PUT)
+router.put('/:id', verifyToken, authorizeRoles('Admin', 'Owner'), async (req, res) => {
     try {
-        const fields = await fieldService.getAllFields();
-        res.status(200).json({ message: 'Lấy danh sách sân thành công', data: fields });
+        const field = await fieldService.updateField(req.params.id, req.body);
+        res.status(200).json({ message: 'Cập nhật thành công', data: field });
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
 });
 
-// API Xóa Sân (Ứng dụng Transaction)
+// 5. Xóa sân
 router.delete('/:id', verifyToken, authorizeRoles('Admin', 'Owner'), async (req, res) => {
     try {
-        const fieldId = req.params.id; // Lấy ID của sân cần xóa từ URL
-        await fieldService.deleteField(fieldId);
-        res.status(200).json({ message: 'Đã xóa sân và toàn bộ đánh giá liên quan thành công!' });
+        await fieldService.deleteField(req.params.id);
+        res.status(200).json({ message: 'Đã xóa sân thành công!' });
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
+});
+
+// 6. Cổng upload ảnh lẻ cho Ant Design
+router.post('/upload', upload.single('image'), (req, res) => {
+    if (!req.file) return res.status(400).json({ message: 'Thiếu file!' });
+    res.status(200).json({ imageUrl: `/uploads/${req.file.filename}` });
 });
 
 module.exports = router;
