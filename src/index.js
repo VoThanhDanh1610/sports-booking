@@ -53,6 +53,9 @@ app.use('/api/fields', fieldRoutes);
 const reviewRoutes = require('./routes/reviewRoutes');
 app.use('/api/reviews', reviewRoutes);
 
+const bookingRoutes = require('./routes/bookingRoutes');
+app.use('/api/bookings', bookingRoutes);
+
 // Kết nối MongoDB
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => {
