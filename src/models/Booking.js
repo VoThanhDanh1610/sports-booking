@@ -30,7 +30,8 @@ const bookingSchema = new mongoose.Schema({
     },
     note:       { type: String, default: '' },
     promoCode:  { type: String, default: null },
-    finalPrice: { type: Number, default: null } // null = không dùng promo; giá thực tế = finalPrice ?? totalPrice
+    finalPrice: { type: Number, default: null }, // null = không dùng promo; giá thực tế = finalPrice ?? totalPrice
+    expiresAt:  { type: Date, default: null }    // tự hủy nếu chưa thanh toán sau 10 phút
 }, { timestamps: true });
 
 module.exports = mongoose.model('Booking', bookingSchema);

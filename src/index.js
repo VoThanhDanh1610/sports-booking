@@ -69,14 +69,63 @@ app.use('/api/payments', paymentRoutes);
 const promotionRoutes = require('./routes/promotionRoutes');
 app.use('/api/promotions', promotionRoutes);
 
+const venueRoutes = require('./routes/venueRoutes');
+app.use('/api/venues', venueRoutes);
+
 // Kết nối MongoDB
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => {
         console.log('✅ Kết nối MongoDB thành công!');
-        // CHÚ Ý: Đổi app.listen thành server.listen
         server.listen(PORT, () => {
             console.log(`🚀 Server đang chạy tại port ${PORT}`);
         });
+
+        // Auto-cancel: hủy booking pending quá 10 phút chưa thanh toán
+        const Booking  = require('./models/Booking');
+        const TimeSlot = require('./models/TimeSlot');
+        const paymentService = require('./services/paymentService');
+        setInterval(async () => {
+            try {
+                const expired = await Booking.find({
+                    status: 'pending',
+                    expiresAt: { $lt: new Date() }
+                });
+                for (const booking of expired) {
+                    booking.status = 'cancelled';
+                    await booking.save();
+                    await TimeSlot.updateMany(
+                        { booking: booking._id },
+                        { status: 'available', booking: null }
+                    );
+                    await paymentService.cancelPaymentForBooking(booking._id).catch(() => {});
+                    console.log(`⏰ Auto-cancel booking ${booking._id} (hết hạn 10 phút)`);
+                }
+            } catch (err) {
+                console.error('Auto-cancel error:', err.message);
+            }
+        }, 60 * 1000); // chạy mỗi 60 giây
+
+        // Auto-complete: chuyển booking confirmed → completed khi đã qua giờ kết thúc
+        setInterval(async () => {
+            try {
+                const now = new Date();
+                const confirmed = await Booking.find({ status: 'confirmed' });
+                for (const booking of confirmed) {
+                    const [endHour, endMin] = booking.endTime.split(':').map(Number);
+                    // booking.date lưu theo UTC midnight; giờ đặt theo UTC+7 (Việt Nam)
+                    const bookingEnd = new Date(booking.date);
+                    bookingEnd.setUTCHours(endHour - 7, endMin, 0, 0);
+                    if (now >= bookingEnd) {
+                        booking.status = 'completed';
+                        await booking.save();
+                        io.to(String(booking.customer)).emit('bookingCompleted', { bookingId: booking._id });
+                        console.log(`✅ Auto-complete booking ${booking._id} (hết giờ ${booking.endTime})`);
+                    }
+                }
+            } catch (err) {
+                console.error('Auto-complete error:', err.message);
+            }
+        }, 60 * 1000); // chạy mỗi 60 giây
     })
     .catch((error) => {
         console.error('❌ Lỗi kết nối MongoDB:', error.message);

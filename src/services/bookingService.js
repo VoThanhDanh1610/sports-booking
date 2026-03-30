@@ -73,7 +73,8 @@ async function createBooking({ customerId, fieldId, dateStr, timeSlotIds, note, 
         totalPrice,
         finalPrice,
         promoCode: validPromoCode,
-        note: note || ''
+        note: note || '',
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000)
     });
 
     await TimeSlot.updateMany(

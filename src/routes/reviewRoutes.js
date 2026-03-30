@@ -3,6 +3,16 @@ const router = express.Router();
 const reviewService = require('../services/reviewService');
 const { verifyToken } = require('../middlewares/authMiddleware');
 
+// Lấy danh sách đánh giá theo sân
+router.get('/field/:fieldId', async (req, res) => {
+    try {
+        const reviews = await reviewService.getReviewsByField(req.params.fieldId);
+        res.json(reviews);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // API Gửi đánh giá (Bắt buộc phải đăng nhập - verifyToken)
 router.post('/', verifyToken, async (req, res) => {
     try {

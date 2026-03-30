@@ -15,10 +15,17 @@ const sportFieldSchema = new mongoose.Schema({
     pricePerHour: { type: Number, required: true }, // Giá thuê 1 giờ
     images: [{ type: String }], // Mảng chứa các link ảnh
     location: { type: String, required: true },
-    status: { 
-        type: String, 
-        enum: ['Active', 'Maintenance', 'Inactive'], // Đang mở, Bảo trì, Đóng cửa
-        default: 'Active' 
+    status: {
+        type: String,
+        enum: ['Active', 'Maintenance', 'Inactive'],
+        default: 'Active'
+    },
+    city:     { type: String, default: '' },     // VD: "Hồ Chí Minh"
+    district: { type: String, default: '' },     // VD: "Quận 7"
+    venue: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Venue',
+        default: null
     }
 }, { timestamps: true });
 
