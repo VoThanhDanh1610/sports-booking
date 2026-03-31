@@ -10,7 +10,8 @@ const upload = require('../middlewares/uploadMiddleware');
 // ======================
 router.get('/', async (req, res) => {
     try {
-        const fields = await fieldService.getAllFields();
+        const { city, district, category } = req.query;
+        const fields = await fieldService.getAllFields({ city, district, category });
         res.status(200).json({ data: fields });
     } catch (error) {
         res.status(400).json({ message: error.message });
@@ -19,7 +20,20 @@ router.get('/', async (req, res) => {
 
 
 // ======================
-// 2. LẤY CHI TIẾT SÂN
+// 2. LẤY SÂN CỦA OWNER ĐANG ĐĂNG NHẬP
+// ======================
+router.get('/my', verifyToken, authorizeRoles('Owner', 'Admin'), async (req, res) => {
+    try {
+        const fields = await fieldService.getMyFields(req.user.id);
+        res.status(200).json({ data: fields });
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+});
+
+
+// ======================
+// 3. LẤY CHI TIẾT SÂN
 // ======================
 router.get('/:id', async (req, res) => {
     try {
@@ -32,7 +46,7 @@ router.get('/:id', async (req, res) => {
 
 
 // ======================
-// 3. TẠO SÂN (có upload hoặc URL)
+// 4. TẠO SÂN (có upload hoặc URL)
 // ======================
 router.post(
     '/',
@@ -51,7 +65,7 @@ router.post(
                 owner: req.user.id
             };
 
-            const field = await fieldService.createField(fieldData, imageUrls);
+            const field = await fieldService.createField(fieldData, imageUrls, req.user.id, req.user.role);
 
             res.status(201).json({
                 message: 'Tạo sân thành công',
@@ -82,7 +96,9 @@ router.put(
             const field = await fieldService.updateField(
                 req.params.id,
                 req.body,
-                imageUrls
+                imageUrls,
+                req.user.id,
+                req.user.role
             );
 
             res.status(200).json({
@@ -106,7 +122,7 @@ router.delete(
     authorizeRoles('Admin', 'Owner'),
     async (req, res) => {
         try {
-            await fieldService.deleteField(req.params.id);
+            await fieldService.deleteField(req.params.id, req.user.id, req.user.role);
             res.status(200).json({ message: 'Đã xóa sân thành công!' });
         } catch (error) {
             res.status(400).json({ message: error.message });

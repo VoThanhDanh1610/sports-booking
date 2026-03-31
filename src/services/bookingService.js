@@ -73,7 +73,8 @@ async function createBooking({ customerId, fieldId, dateStr, timeSlotIds, note, 
         totalPrice,
         finalPrice,
         promoCode: validPromoCode,
-        note: note || ''
+        note: note || '',
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000)
     });
 
     await TimeSlot.updateMany(
@@ -143,10 +144,7 @@ async function updateBookingStatus(bookingId, newStatus, requesterId, requesterR
             { booking: bookingId },
             { status: 'available', booking: null }
         );
-        // Hoàn tiền nếu đã confirmed (đã có payment record)
-        if (oldStatus === 'confirmed') {
-            await paymentService.createRefundForBooking(bookingId);
-        }
+        await paymentService.cancelPaymentForBooking(bookingId);
     }
 
     // Tạo payment khi confirmed

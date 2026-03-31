@@ -2,6 +2,7 @@ const express = require('express');
 const router  = express.Router();
 const { verifyToken, authorizeRoles } = require('../middlewares/authMiddleware');
 const bookingService = require('../services/bookingService');
+const paymentService = require('../services/paymentService');
 
 // GET /api/bookings/fields/:fieldId/timeslots?date=YYYY-MM-DD
 router.get('/fields/:fieldId/timeslots', async (req, res) => {
@@ -45,7 +46,11 @@ router.post('/', verifyToken, authorizeRoles('Customer'), async (req, res) => {
             bookingId: booking._id
         });
 
-        res.status(201).json(booking);
+        // Tạo payment record và PayOS link ngay lập tức
+        await paymentService.createPaymentForBooking(booking._id);
+        const { checkoutUrl } = await paymentService.createPaymentLink(booking._id);
+
+        res.status(201).json({ ...booking.toObject(), checkoutUrl });
     } catch (err) {
         res.status(400).json({ message: err.message });
     }
