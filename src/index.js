@@ -75,6 +75,9 @@ app.use('/api/venues', venueRoutes);
 const userRoutes = require('./routes/userRoutes');
 app.use('/api/users', userRoutes);
 
+const favoriteRoutes = require('./routes/favoriteRoutes');
+app.use('/api/favorites', favoriteRoutes);
+
 // Kết nối MongoDB
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => {
