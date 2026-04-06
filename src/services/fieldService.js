@@ -31,7 +31,7 @@ const getMyFields = async (ownerId) => {
 
 // GET ALL (hỗ trợ lọc theo city, district, category)
 const getAllFields = async ({ city, district, category } = {}) => {
-    const filter = {};
+    const filter = { status: 'Active' };
     if (city)     filter.city     = city;
     if (district) filter.district = district;
     if (category) filter.category = category;

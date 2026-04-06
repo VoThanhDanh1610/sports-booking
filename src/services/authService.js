@@ -29,11 +29,11 @@ const register = async (data) => {
 };
 
 const login = async (email, password) => {
-    // Tìm user theo email
     const user = await User.findOne({ email });
     if (!user) throw new Error('Email không tồn tại');
 
-    // So sánh mật khẩu
+    if (!user.isActive) throw new Error('Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.');
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) throw new Error('Mật khẩu không chính xác');
 
