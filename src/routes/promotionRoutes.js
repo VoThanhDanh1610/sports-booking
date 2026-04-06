@@ -15,8 +15,8 @@ router.post('/verify', verifyToken, authorizeRoles('Customer'), async (req, res)
     }
 });
 
-// GET /api/promotions — Tất cả mã (Admin)
-router.get('/', verifyToken, authorizeRoles('Admin'), async (req, res) => {
+// GET /api/promotions — Tất cả mã (Owner)
+router.get('/', verifyToken, authorizeRoles('Owner'), async (req, res) => {
     try {
         const promos = await promotionService.getAllPromotions();
         res.json(promos);
@@ -25,8 +25,8 @@ router.get('/', verifyToken, authorizeRoles('Admin'), async (req, res) => {
     }
 });
 
-// POST /api/promotions — Tạo mã mới (Admin)
-router.post('/', verifyToken, authorizeRoles('Admin'), async (req, res) => {
+// POST /api/promotions — Tạo mã mới (Owner)
+router.post('/', verifyToken, authorizeRoles('Owner'), async (req, res) => {
     try {
         const promo = await promotionService.createPromotion(req.body, req.user.id);
         res.status(201).json(promo);
@@ -35,8 +35,8 @@ router.post('/', verifyToken, authorizeRoles('Admin'), async (req, res) => {
     }
 });
 
-// PUT /api/promotions/:id/toggle — Bật/tắt mã (Admin)
-router.put('/:id/toggle', verifyToken, authorizeRoles('Admin'), async (req, res) => {
+// PUT /api/promotions/:id/toggle — Bật/tắt mã (Owner)
+router.put('/:id/toggle', verifyToken, authorizeRoles('Owner'), async (req, res) => {
     try {
         const promo = await promotionService.togglePromotion(req.params.id);
         res.json(promo);
@@ -45,8 +45,8 @@ router.put('/:id/toggle', verifyToken, authorizeRoles('Admin'), async (req, res)
     }
 });
 
-// DELETE /api/promotions/:id — Xóa mã (Admin)
-router.delete('/:id', verifyToken, authorizeRoles('Admin'), async (req, res) => {
+// DELETE /api/promotions/:id — Xóa mã (Owner)
+router.delete('/:id', verifyToken, authorizeRoles('Owner'), async (req, res) => {
     try {
         await promotionService.deletePromotion(req.params.id);
         res.json({ message: 'Đã xóa mã giảm giá' });

@@ -72,6 +72,9 @@ app.use('/api/promotions', promotionRoutes);
 const venueRoutes = require('./routes/venueRoutes');
 app.use('/api/venues', venueRoutes);
 
+const userRoutes = require('./routes/userRoutes');
+app.use('/api/users', userRoutes);
+
 const favoriteRoutes = require('./routes/favoriteRoutes');
 app.use('/api/favorites', favoriteRoutes);
 

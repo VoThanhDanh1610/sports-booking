@@ -3,6 +3,7 @@ const Payment = require('../models/Payment');
 const Booking = require('../models/Booking');
 const payos = require('../utils/payos');
 const TimeSlot = require('../models/TimeSlot');
+const emailService = require('./emailService');
 
 const RETURN_URL = 'http://localhost:5173/payment/return';
 const CANCEL_URL = 'http://localhost:5173/payment/return?cancelled=true';
@@ -101,7 +102,12 @@ async function handlePayOSWebhook(webhookBody) {
             { status: 'completed' },
             { new: true }
         );
-        if (payment) await Booking.findByIdAndUpdate(payment.booking, { status: 'confirmed' });
+        if (payment) {
+            await Booking.findByIdAndUpdate(payment.booking, { status: 'confirmed' });
+            emailService.sendBookingConfirmationEmail(payment._id).catch(err =>
+                console.error('[Email] Lỗi gửi email xác nhận (webhook):', err.message)
+            );
+        }
     }
     return data;
 }
@@ -118,6 +124,9 @@ async function confirmReturnPayment(orderCode) {
         await Payment.findByIdAndUpdate(payment._id, { status: 'completed' });
         // Tự động xác nhận booking khi thanh toán thành công
         await Booking.findByIdAndUpdate(payment.booking, { status: 'confirmed' });
+        emailService.sendBookingConfirmationEmail(payment._id).catch(err =>
+            console.error('[Email] Lỗi gửi email xác nhận (return URL):', err.message)
+        );
     }
     return info;
 }
